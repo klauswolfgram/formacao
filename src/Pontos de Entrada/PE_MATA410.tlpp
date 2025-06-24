@@ -1,0 +1,44 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_MT410FSQL
+    Filtro para tela de pedidos de vendas.
+    @type  Function
+    /*/
+Function U_M410FSQL
+
+    Local cFiltro := ''
+
+    IF fwIsIncallStack('U_GCTB003')
+        cFiltro += "C5_NUM = '" + Z53->Z53_PEDIDO + "' "
+    EndIF    
+    
+Return cFiltro
+
+/*/{Protheus.doc} U_A410EXC
+    (long_description)
+    @type  Function
+    /*/
+Function U_A410EXC
+
+    Local lValid := .T.
+    
+Return lValid
+
+/*/{Protheus.doc} U_M410LIOK
+    (long_description)
+    @type  Function
+    /*/
+Function U_M410LIOK
+
+    Local lValid := .T.
+
+    IF .not. empty(M->C5_ZNUMMED)
+        IF .not. empty(gdFieldGet('C6_ZITEMME'))
+            IF gdDeleted()
+                fwAlertError('ITEM ASSOCIADO A MEDICAO DE CONTRATOS. NAO PODE SER EXCLUIDO.','ERRO')
+                return .F.
+            EndIF
+        EndIF
+    EndIF
+    
+Return lValid

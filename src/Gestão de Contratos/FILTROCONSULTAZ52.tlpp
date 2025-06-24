@@ -1,0 +1,15 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_FILTRO_CONSULTA_Z52
+    Funcao para filtro na consulta Z52
+    @type  Function
+    /*/
+Function U_FILTRO_CONSULTA_Z52
+
+    IF fwIsInCallStack('U_CGTA003')
+        return Z52->Z52_NUMERO == cNumZ51 .and. Z52->Z52_FILIAL == xFilial('Z52') 
+    ElseIF fwIsInCallStack('U_GCTB003')  
+        return Z52->Z52_NUMERO == fwFldGet('Z53_NUMERO') .and. Z52->Z52_FILIAL == xFilial('Z52')
+    EndIF  
+    
+Return 

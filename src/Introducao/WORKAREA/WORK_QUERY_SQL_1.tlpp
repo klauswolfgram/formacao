@@ -1,0 +1,32 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_WORK_QUERY_SQL
+    Funcao auxiliar para demostrar o funcionamento de querys SQL em advpl
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/tec/DBUseArea
+    @see https://tdn.totvs.com/display/tec/TCGenQry
+    @see https://tdn.totvs.com/display/tec/TCSetField
+    /*/
+Function U_WORK_QUERY_SQL_1
+
+    Local cSQL      := ''
+    Local aDados    := array(0)
+
+    rpcSetEnv('99','01')
+
+    cSQL            := "SELECT * FROM SA2990 WHERE D_E_L_E_T_ = ' ' ORDER BY A2_NOME"
+
+    dbUseArea(.T.,"TOPCONN",tcGenQry(,,cSQL),"QRY",.T.,.F.)
+    tcSetField("QRY","A2_DTNASC","D",8,0)
+
+    While .not. QRY->(eof())
+        QRY->(aadd(aDados,{A2_COD,A2_LOJA,A2_NOME,A2_DTNASC}),dbSkip())
+    Enddo
+
+    QRY->(dbCloseArea())
+    
+    rpcClearEnv()
+
+Return aDados

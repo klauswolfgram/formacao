@@ -1,0 +1,76 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_CRIAR_ARQUIVO_TEXTO_1
+    Funcao exemplo para criacao de arquivo texto.
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/tec/FCreate
+    @see https://tdn.totvs.com/display/tec/FWrite
+    @see https://tdn.totvs.com/display/tec/FError
+    @see https://tdn.totvs.com/display/tec/FClose
+    @see https://tdn.totvs.com/display/tec/File
+    @see https://tdn.totvs.com/display/tec/FErase
+    /*/
+Function U_CRIAR_ARQUIVO_TEXTO_1
+
+    Local cSaveFile as character
+    Local cBuffer   as character
+    Local nBuffer   as numeric
+    Local nHandle   as numeric
+    Local nWrite    as numeric 
+
+    rpcSetEnv('99','01')
+
+    cSaveFile := 'C:\TOTVS\ListaCliFor.txt'
+
+    IF File(cSaveFile)
+        fErase(cSaveFile)
+    EndIF 
+
+    nHandle := fCreate(cSaveFile)   
+
+    IF nHandle < 0
+        fwAlertError("Erro ao efetuar a criacao do arquivo. Codigo do erro: " + Str(fError(),4), "ERRO")
+        rpcClearEnv()
+        return .F.
+    EndIF    
+
+    cBuffer := padr("ENTIDADE",10) + padr("CODIGO",10) + padr("LOJA",5) + padr("NOME",35) + padr("DT NASCIMENTO",20)
+    nBuffer := Len(cBuffer)
+
+    nWrite  := fWrite(nHandle,cBuffer)
+
+    IF nWrite <> nBuffer
+        fwAlertError("Erro ao efetuar a gravacao no arquivo. Codigo do erro: " + Str(fError(),4), "ERRO")
+        fClose(nHandle)
+        rpcClearEnv()
+        return .F.
+    EndIF
+
+    cBuffer := CRLF + strtran(space(80)," ","-")
+    nBuffer := Len(cBuffer)
+
+    nWrite  := fWrite(nHandle,cBuffer)
+
+    IF nWrite <> nBuffer
+        fwAlertError("Erro ao efetuar a gravacao no arquivo. Codigo do erro: " + Str(fError(),4), "ERRO")
+        fClose(nHandle)
+        rpcClearEnv()
+        return .F.
+    EndIF
+
+    cPrefixo := ''
+
+    bBloco := {|| cPrefixo := substr(alias(),2,2),;
+                  cBuffer  := CRLF + padr(alias(),10) + padr(&(cPrefixo + "_COD" ),10) + padr(&(cPrefixo + "_LOJA"),05) + padr(LEFT(&(cPrefixo + "_NOME"),30),35) +  padr(dtoc(&(cPrefixo + "_DTNASC")),20),;
+                  fWrite(nHandle,cBuffer)}  
+
+    SA1->(dbEval(bBloco))
+    SA2->(dbEval(bBloco))    
+
+    fClose(nHandle)  
+
+    rpcClearEnv()
+    
+Return 

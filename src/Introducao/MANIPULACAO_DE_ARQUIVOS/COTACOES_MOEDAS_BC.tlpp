@@ -1,0 +1,144 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_COTACOES_MOEDAS_BC
+    Programa para importacao das cotacoes de moedas e gravacao na tabela SM2
+    @type  Function
+    @author Klaus Wolfgram
+    @since 09/07/2023
+
+    M2_MOEDA2:= DOLAR_COMPRA
+    M2_MOEDA3:= DOLAR_VENDA
+    M2_MOEDA4:= EURO_COMPRA
+    M2_MOEDA5:= EURO_VENDA
+
+    @see https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas
+    @see https://www4.bcb.gov.br/Download/fechamento/20200102.csv
+    @see https://tdn.totvs.com/display/tec/HTTPGet
+    @see https://tdn.totvs.com/display/tec/SToD
+    @see https://tdn.totvs.com/display/tec/DToS
+    @see https://tdn.totvs.com/display/tec/Val
+    @see https://tdn.totvs.com/display/tec/AAdd
+    @see https://tdn.totvs.com/display/tec/Array
+    @see https://tdn.totvs.com/display/tec/AEVal
+    @see https://tdn.totvs.com/display/tec/iif
+    @see https://tdn.totvs.com/display/tec/StrTran
+    @see https://tdn.totvs.com/display/tec/StrTokArr
+    @see https://tdn.totvs.com/display/tec/MemoWrite
+    @see https://tdn.totvs.com/display/tec/MemoRead
+    @see https://tdn.totvs.com/display/tec/DBSelectArea
+    @see https://tdn.totvs.com/display/tec/DBSetOrder
+    @see https://tdn.totvs.com/display/tec/DBSeek
+    @see https://tdn.totvs.com/display/tec/Alias
+    @see https://tdn.totvs.com/pages/viewpage.action?pageId=6814927  (funcao rpcsetenv)
+    @see https://tdn.totvs.com/pages/viewpage.action?pageId=6815098  (funcao datavalida)
+    @see https://tdn.totvs.com/pages/viewpage.action?pageId=24347041 (funcao reclock)
+    @see https://tdn.totvs.com/pages/viewpage.action?pageId=24347005 (funcao msunlock)
+    /*/
+Function U_COTACOES_MOEDAS_BC
+
+    Local lRPC          := .F.
+    Local lInclui       := .F.
+    Local cBaseURL      := 'https://www4.bcb.gov.br/Download/fechamento/'
+    Local dData         := stod('20200101')
+    Local cData         := ''
+    Local cArqMoedas    := '\system\datacotacao.txt'
+    Local cTxtCotacoes  := ''
+    Local nM2_MOEDA2    := '0'
+    Local nM2_MOEDA3    := '0'
+    Local nM2_MOEDA4    := '0'
+    Local nM2_MOEDA5    := '0'    
+    Local aLinhas       := array(0)
+    Local aCotacoes     := array(0)
+    Local x
+
+    IF type('cEmpAnt') != 'C'
+        lRPC            := .T.
+        rpcSetEnv('99','01')
+    EndIF 
+
+    IF .not. file(cArqMoedas)
+        memowrite(cArqMoedas,'20200101')
+    EndIF
+
+    dData               := stod(memoread(cArqMoedas)) 
+
+    IF dData > date()
+        IF lRPC
+            rpcClearEnv()
+        EndIF    
+        return
+    EndIF
+
+    procregua(dateDiffDay(dData,date()))
+
+    While .T.
+
+        dData            := stod(memoread(cArqMoedas)) 
+        cData            := dtos(datavalida(dData - 1,.F.))
+        cTxtCotacoes     := httpget(cBaseURL + cData + '.csv')
+        aCotacoes        := array(0)
+        aLinhas          := strToKArr(cTxtCotacoes, CHR(13) + CHR(10))
+
+        incproc('Dia: ' + dtoc(dData))
+
+        For x := 1 To Len(aLinhas)
+            IF "USD" $ aLinhas[x] .or. "EUR" $ aLinhas[x]
+                aadd(aCotacoes,strToKArr(aLinhas[x],";"))
+            EndIF
+        Next    
+
+        dbSelectArea("SM2")
+        dbSetOrder(1)            
+
+        IF Len(aCotacoes) = 0
+
+            nM2_MOEDA2          := 0 
+            nM2_MOEDA3          := 0 
+            nM2_MOEDA4          := 0 
+            nM2_MOEDA5          := 0         
+
+            lAchou              := dbSeek(dData - 1)            
+
+            IF lAchou
+
+                nM2_MOEDA2       := M2_MOEDA2
+                nM2_MOEDA3       := M2_MOEDA3
+                nM2_MOEDA4       := M2_MOEDA4
+                nM2_MOEDA5       := M2_MOEDa5
+
+            EndIF
+
+        Else
+
+            nM2_MOEDA2          := val(strtran(aCotacoes[1,5],",","."))
+            nM2_MOEDA3          := val(strtran(aCotacoes[1,6],",","."))
+            nM2_MOEDA4          := val(strtran(aCotacoes[2,5],",","."))
+            nM2_MOEDA5          := val(strtran(aCotacoes[2,6],",","."))
+
+        EndIF   
+
+        lInclui                 := .not. dbSeek(dData) 
+
+        reclock(alias(),lInclui)
+            M2_DATA      := dData
+            M2_INFORM    := "S"
+            M2_MOEDA1    := 1
+            M2_MOEDA2    := nM2_MOEDA2
+            M2_MOEDA3    := nM2_MOEDA3
+            M2_MOEDA4    := nM2_MOEDA4
+            M2_MOEDA5    := nM2_MOEDA5
+        msunlock()
+
+        memowrite(cArqMoedas,dtos(dData + 1))
+
+        IF dData >= date()
+            Exit
+        EndIF    
+
+    Enddo
+
+    IF lRPC
+        rpcClearEnv()
+    EndIF       
+    
+Return 

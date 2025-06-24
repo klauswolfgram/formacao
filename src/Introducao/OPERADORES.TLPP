@@ -1,0 +1,101 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_OPERADOR_DE_ATRIBUICAO
+    Demonstra o operador de atribuicao e as formas de atribuicao
+    @type  Function
+    @author Klaus Wolfgram
+    @since 09/06/2023
+    @version 1.0
+    /*/
+Function U_OPERADORES(parametro)
+
+    default parametro := 10
+
+    /*/OPERADORES DE ATRIBUICAO/*/
+    numero := 10 //-- ATRIBUICAO SIMPLES
+    numero += 20 //-- SOMA E ATRIBUI
+    numero -= 20 //-- SUBTRAI E ATRIBUI
+    numero *= 10 //-- MULTIPLICA A ATRIBUI
+    numero /= 10 //-- DIVIDE E ATRIBUI
+
+    /*/OPERADORES COMUNS/*/
+    numero := 10
+    numero := numero + 20
+    numero := numero - 20
+    numero := numero * 10
+    numero := numero / 10
+    numero := numero ** 10
+    numero := numero % 10
+
+    /*/OPERADORES LOGICOS/*/
+    nome = 'ZZZZ'
+    lret := nome = 'ZZZ'
+    lret := nome == 'ZZZ'
+    lret := numero > 10
+    lret := numero < 10
+    lret := numero >= 10
+    lret := numero <= 10
+    lret := numero <> 10
+    lret := numero != 10   
+    lret := ! numero = 10
+    lret := .not. numero = 10
+    lret := numero > 10 .and. numero < 100 
+    lret := numero > 10 .or. numero < 100
+
+    /*/OPERADORES COM TEXTO/*/
+    nome := 'klaus '
+    sobrenome := 'wolfgram'
+    nome_completo1 := nome + sobrenome
+    nome_completo1 += sobrenome
+    nome_completo1 := nome
+    nome_completo1 -= sobrenome
+    lret := nome $ nome_completo1
+    lret := sobrenome $ nome_completo1
+
+    /*/OPERADORES COM DATA/*/
+    data_login := date()
+    data_login += 10
+    data_login -= 10
+
+    /*/OPERADORES ESPECIAIS/*/
+    // -> OPERADOR DE APELIDO: USADO PRA RELACIONAR UM CAMPO A UMA TABELA OU AREA DE MEMORIA
+    M->A1_COD := '' //SA1->A1_COD
+    
+    // () OPERADOR DE AGRUPAMENTO OU FUNCAO
+    (total1 := numero + parametro, total2 := numero - parametro * 2)
+    
+    // & OPERADOR DE MACROSUBSTITUICAO
+    total := &('numero') + 10
+   
+    // {} DEFINICAO DE MATRIZ OU BLOCO DE CODIGO
+    lista_numeros := {10,20,30,40}
+    bloco := {|| fwAlertInfo('Ok')}
+    
+    // @passagem de parametro por referencia
+    numero := 10
+    soma_numeros(@numero,parametro)
+
+    nome_completo := ''
+    nome_completo := 'klaus ' +;
+    'wolfgram'
+
+    nome := '' ; sobre_nome := ''; nome_completo := ''
+
+    /*/OPERADORES INCREMENTAIS E DECREMENTAIS ++ --/*/
+    total   := 0
+    numero  := 10
+
+    /*/INCREMENTOS E DECREMENTOS POSFIXADOS/*/
+    total   := numero++ + 10
+    total1  := numero-- - 10
+
+    /*/INCREMENTOS E DECREMENTOS PREFIXADOS/*/
+    total   := ++numero + 10
+    total1  := --numero - 10
+
+Return 
+
+Static Function soma_numeros(p1,p2)
+    p1 := p1 * p2
+    p2 := p1
+return

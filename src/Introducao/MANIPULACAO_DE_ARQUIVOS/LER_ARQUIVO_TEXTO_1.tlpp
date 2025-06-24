@@ -1,0 +1,55 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_LER_ARQUIVO_TEXTO_1
+    Exemplo de leitura de arquivo texto
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/tec/FOpen
+    @see https://tdn.totvs.com/display/tec/FSeek
+    @see https://tdn.totvs.com/display/tec/FRead
+    @see https://tdn.totvs.com/display/tec/Len
+    @see https://tdn.totvs.com/display/tec/StrTokArr
+    @see https://tdn.totvs.com/display/tec/AEVal
+    /*/
+Function U_LER_ARQUIVO_TEXTO_1
+
+    Local cArquivo  as character
+    Local cBuffer   as character
+    Local cTexto    as character
+    Local nHandle   as numeric
+    Local nTamFile  as numeric
+    Local nTamLidos as numeric
+    Local aLinhas   as array
+    Local aDados    as array
+
+    rpcSetEnv('99','01')
+
+    cArquivo := 'C:\TOTVS\ListaCliFor.csv'
+
+    nHandle  := fOpen(cArquivo)
+
+    IF nHandle < 0
+        fwAlertError("ERRO AO EFETUAR A LEITURA DO ARQUIVO - CODIGO DE ERRO: " + str(fError(),4))
+        rpcClearEnv()
+        return .F.
+    EndIF 
+
+    nTamFile := fSeek(nHandle,0,2)   
+    fSeek(nHandle,0)
+
+    While nTamLidos < nTamFile
+        cBuffer := ''
+        nTamLidos += fRead(nHandle,@cBuffer,100)
+        cTexto  += cBuffer
+    Enddo
+
+    fClose(nHandle)
+
+    aDados  := array(0)
+    aLinhas := strToKArr(cTexto,CHR(13) + CHR(10))
+    aEval(aLinhas,{|x| aadd(aDados,strToKArr(x,";"))})
+
+    rpcClearEnv()
+    
+Return 

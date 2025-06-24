@@ -1,0 +1,28 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_MT120QRY
+    Filtro no padrao SQL para o browse de pedidos de compras
+    @type  Function
+    /*/
+Function U_MT120QRY
+
+    Local cFiltro := ''
+
+    IF fwIsIncallStack('U_GCTB003')
+        cFiltro += "C7_NUM = '" + Z53->Z53_PEDIDO + "' "
+    EndIF
+    
+Return cFiltro
+
+Function U_MTA120EX
+
+    Local lValid := .T.
+
+    IF .not. empty(SC7->C7_ZNUMMED)
+        IF .not. fwIsIncallStack('U_GCTB003')
+            fwAlertError('ESSE PEDIDO FOI GERADO POR UMA MEDICAO. ACESSE A TELA DE MEDICOES PARA EXCLUIR O PEDIDO E REABRIR A MEDICAO.','ERRO')
+            return .F.
+        EndIF
+    EndIF
+
+Return lValid

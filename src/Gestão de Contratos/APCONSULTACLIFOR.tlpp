@@ -1,0 +1,31 @@
+#include 'totvs.ch'
+
+Function U_CONSULTACLIFOR
+
+    IF type("cCodClienteFornecedor") == "C"
+        cCodClienteFornecedor  := space(tamSX3("A1_COD" )[1])
+        cLojaClienteFornecedor := space(tamSX3("A1_LOJA")[1])
+    Else
+        Public cCodClienteFornecedor  := space(tamSX3("A1_COD" )[1]) as character
+        Public cLojaClienteFornecedor := space(tamSX3("A1_LOJA")[1]) as character
+    EndIF
+
+    IF M->Z51_TPINTE == "C" //-- Integracao com cadastros de fornecedores
+        
+        IF conpad1(,,,"SA2")
+            cCodClienteFornecedor  := SA2->A2_COD
+            cLojaClienteFornecedor := SA2->A2_LOJA
+            return .T.   
+        EndIF
+
+    Else //-- Integracao com cadastro de clientes
+       
+        IF conpad1(,,,"SA1")
+            cCodClienteFornecedor  := SA1->A1_COD
+            cLojaClienteFornecedor := SA1->A1_LOJA
+            return .T.   
+        EndIF
+
+    EndIF    
+
+return .F.

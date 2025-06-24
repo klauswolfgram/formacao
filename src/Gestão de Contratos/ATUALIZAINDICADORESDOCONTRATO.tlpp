@@ -1,0 +1,79 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_ATUALIZA_INDICADORES_DO_CONTRATO
+    Funcao para gravacao dos indicadores do contrato.
+    @type  Function
+    /*/
+Function U_ATUALIZA_INDICADORES_DO_CONTRATO
+
+    IF .not. (isInCallStack('U_GCTA002') .or. isInCallStack('U_GCTB002')) //-- Posicionado na medicao
+        
+        Z51->(dbSetOrder(1),dbSeek(Z53->(Z53_FILIAL+Z53_NUMERO)))
+
+        IF .not. Z51->(Found())
+            return
+        EndIF
+
+    EndIF
+
+    ATUALIZA_INDICADORES_DO_CONTRATO()
+    
+Return 
+
+Static Function ATUALIZA_INDICADORES_DO_CONTRATO
+
+    Z52->(dbSetOrder(1),dbSeek(Z51->(Z51_FILIAL+Z51_NUMERO)))
+
+    While .not. Z52->(eof()) .and. Z52->(Z52_FILIAL+Z52_NUMERO) == Z51->(Z51_FILIAL+Z51_NUMERO)
+        ATUALIZA_ITEM_DO_CONTRATO()
+        Z52->(dbSkip())
+    Enddo
+
+    ATUALIZA_CABECALHO_CONTRATO()
+
+Return
+
+Static Function ATUALIZA_CABECALHO_CONTRATO
+
+    Local cAliasSQL := ''
+    Local cSQL      := ''
+    Local nQtdMed   := 0
+
+    cSQL            += "SELECT DISTINCT Z53_FILIAL, Z53_NUMERO, Z53_NUMMED FROM " + retSqlName("Z53") + " Z53"
+    cSQL            += CRLF + "WHERE D_E_L_E_T_ = ' ' "
+    cSQL            += CRLF + "AND Z53_FILIAL = '" + Z51->Z51_FILIAL + "' "
+    cSQL            += CRLF + "AND Z53_NUMERO = '" + Z51->Z51_NUMERO + "' "
+
+    cAliasSQL       := mpSysOpenQuery(cSQL)  
+    (cAliasSQL)->(dbEval({|| nQtdMed++ }),dbCloseArea())
+
+    Z51->(reclock(alias(),.F.), Z51_QTDMED := nQtdMed, msunlock())
+
+return
+
+Static Function ATUALIZA_ITEM_DO_CONTRATO
+
+    Local cAliasSQL := getNextAlias()
+    Local nQuantMed := 0
+    Local nQtdMed   := 0
+    Local nVlrMed   := 0
+
+    BeginSQL alias cAliasSQL
+        SELECT * 
+        FROM %table:Z53% Z53
+        WHERE Z53.%notdel%
+        AND Z53_FILIAL = %exp:Z52->Z52_FILIAL%
+        AND Z53_NUMERO = %exp:Z52->Z52_NUMERO%
+        AND Z53_CODPRD = %exp:Z52->Z52_CODPRD%
+    EndSQL  
+
+    (cAliasSQL)->(dbEval({|| nQuantMed += Z53_QTD, nVlrMed += Z53_VALOR, nQtdMed++}),dbCloseArea())
+
+    Z52->(reclock(alias(),.F.),; 
+        Z52_QTDATU := nQuantMed,;
+        Z52_VLRMED := nVlrMed,; 
+        Z52_QTDMED := nQtdMed,;
+        Z52_SALDO  := Z52_VALOR - Z52_VLRMED,;
+        msunlock())
+
+return

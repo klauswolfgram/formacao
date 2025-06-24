@@ -1,0 +1,27 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_WORK_QUERY_SQL_4
+    exemplo de UPDATE SQL
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/tec/TCSQLExec
+    @see https://tdn.totvs.com/display/tec/TCSQLError
+    /*/
+Function U_WORK_QUERY_SQL_4
+
+    rpcSetEnv('99','01')
+
+    cSQL := "UPDATE " + retSqlName("SA1")
+    cSQL += CRLF + "SET D_E_L_E_T_ = ' ' "
+    cSQL += CRLF + "WHERE D_E_L_E_T_ = '*' "
+
+    nSQL := tcSqlExec(cSQL)
+
+    IF nSQL < 0
+        fwAlertError(tcSqlError(),'ERRO UPDATE SQL')
+    EndIF  
+
+    rpcClearEnv()
+    
+Return 

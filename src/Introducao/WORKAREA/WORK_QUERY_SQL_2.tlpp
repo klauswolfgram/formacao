@@ -1,0 +1,25 @@
+#include 'totvs.ch'
+#include 'topconn.ch'
+
+/*/{Protheus.doc} U_WORK_QUERY_SQL_2
+    Exemplo de execucao de consultas SQL utilizando comandos.
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/tec/Comando+TCQUERY
+    /*/
+Function U_WORK_QUERY_SQL_2
+
+    rpcSetEnv('99','01')
+    
+    aDados    := array(0)
+    cSQL      := "SELECT A1_COD,A1_NOME,A1_DTNASC, D_E_L_E_T_ DELETE_ FROM SA1990 ORDER BY A1_COD"
+
+    tcQuery cSQL new alias QRY
+    tcSetField("QRY","A1_DTNASC","D",8,0)
+
+    QRY->(dbEval({|| aadd(aDados,{A1_COD,A1_NOME,A1_DTNASC,DELETE_})}))
+
+    rpcClearEnv()
+    
+Return 

@@ -1,0 +1,56 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_WORK_ARQUIVO_TEMPORARIO_2
+    Programa para exemplo sobre funcionamento de arquivos temporarios.
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/public/framework/FWTemporaryTable
+    @see https://tdn.totvs.com/display/tec/MemoWrite
+    /*/
+Function U_WORK_ARQUIVO_TEMPORARIO_2
+
+    Local oTempTable as object
+    Local cAliasTemp as character
+    Local cRealName  as character
+
+    rpcSetEnv('99','01')
+
+    cAliasTemp := 'TRBSA1SA2'
+    oTempTable := fwTemporaryTable():new(cAliasTemp)
+    oTempTable:setFields({{"ENTIDADE","C",3,0},{"CODIGO","C",6,0},{"LOJA","C",2,0},{"NOME","C",30,0}})
+    oTempTable:addIndex("IND_1",{"CODIGO","LOJA","ENTIDADE"})
+    oTempTable:create()
+
+    cRealName := oTempTable:getRealName()
+
+    dbSelectArea("SA1")
+    dbSetOrder(1)
+
+    While .not. eof()
+        (cAliasTemp)->(reclock(alias(),.T.), CODIGO := SA1->A1_COD, LOJA := SA1->A1_LOJA, NOME := SA1->A1_NOME, ENTIDADE := SA1->(alias()),msunlock())
+        dbSkip()
+    Enddo
+
+    dbSelectArea("SA2")
+    dbSetOrder(1)
+
+    While .not. eof()
+        (cAliasTemp)->(reclock(alias(),.T.), CODIGO := SA2->A2_COD, LOJA := SA2->A2_LOJA, NOME := SA2->A2_NOME, ENTIDADE := SA2->(alias()),msunlock())
+        dbSkip()
+    Enddo    
+
+    cTxt := "ENTIDADE;CODIGO;LOJA;NOME"
+
+    (cAliasTemp)->(dbSetOrder(1),dbEval({|| cTxt += CRLF + ENTIDADE + ';' + CODIGO + ';' + LOJA + ';' + NOME}))
+
+    cArquivo := "C:\TOTVS\ListaEntidades.csv"
+    lArquivo := memoWrite(cArquivo,cTxt)
+
+    (cAliasTemp)->(dbCloseArea())
+
+    oTempTable:delete()
+
+    rpcClearEnv()
+    
+Return 

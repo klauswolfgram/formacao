@@ -1,0 +1,73 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_CRIAR_ARQUIVO_TEXTO_2
+    Funcao exemplo para criacao de arquivo texto.
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/framework/FWFileWriter
+    /*/
+Function U_CRIAR_ARQUIVO_TEXTO_2
+
+    Local cSaveFile     as character
+    Local cBuffer       as character
+    Local oArqTxt       as object
+    Local lExistFile    as logical
+    Local lArqTxt       as logical
+    Local lWrite        as logical
+
+    rpcSetEnv('99','01')
+
+    cSaveFile           := 'C:\TOTVS\ListaCliFor.txt'
+    lExistFile          := File(cSaveFile)
+    oArqTxt             := fwFileWriter():new(cSaveFile,.F.)
+
+    IF lExistFile
+        
+        lArqTxt         := oArqTxt:open(2)
+
+        IF lArqTxt
+            oArqTxt:clear()
+        Else
+            fwAlertError(oArqTxt:error():message,'ERRO NA ABERTURA DO ARQUIVO')
+            rpcClearEnv()
+            return .F.
+        EndIF
+
+    Else
+
+        lArqTxt         := oArqTxt:create()
+
+        IF .not. lArqTxt
+            fwAlertError(oArqTxt:error():message,'ERRO NA ABERTURA DO ARQUIVO')
+            rpcClearEnv()
+            return .F.
+        EndIF
+
+    EndIF  
+
+    cBuffer := padr("CODIGO",10) + padr("LOJA",5) + padr("NOME",35) + padr("DT NASCIMENTO",20) + padr("ENTIDADE",10)  
+    lWrite  := oArqTxt:write(cBuffer)  
+
+    IF .not. lWrite
+        fwAlertError(oArqTxt:error():message,'ERRO NA ABERTURA DO ARQUIVO')
+        rpcClearEnv()
+        return .F.
+    EndIF  
+
+    cBuffer := CRLF + strtran(space(80)," ","-")
+    oArqTxt:write(cBuffer)
+
+    
+    bBloco := {|| cPrefixo := substr(alias(),2,2),;
+                  cBuffer  := CRLF + padr(&(cPrefixo + "_COD" ),10) + padr(&(cPrefixo + "_LOJA"),05) + padr(LEFT(&(cPrefixo + "_NOME"),30),35) +  padr(dtoc(&(cPrefixo + "_DTNASC")),20)  + padr(alias(),10),;
+                  oArqTxt:write(cBuffer)}
+
+    SA1->(dbEval(bBloco))
+    SA2->(dbEval(bBloco))
+
+    oArqTxt:close()                     
+
+    rpcClearEnv()
+    
+Return 

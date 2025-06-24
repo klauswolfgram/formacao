@@ -1,0 +1,47 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_LER_ARQUIVO_TEXTO_2
+    Exemplo de leitura de arquivo texto
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/public/framework/FWFileReader
+    @see https://tdn.totvs.com/display/tec/ASort
+    /*/
+Function U_LER_ARQUIVO_TEXTO_2
+
+    Local cArquivo  as character
+    Local cBuffer   as character
+    Local cTexto    as character
+    Local aLinhas   as array
+    Local aDados    as array
+    Local oFile     as object
+
+    rpcSetEnv('99','01')
+
+    cArquivo    := 'C:\TOTVS\ListaCliFor.csv'
+
+    oFile       := fwFileReader():new(cArquivo)
+    lOpen       := oFile:open()
+
+    IF lOpen
+        While .not. oFile:eof()
+            cBuffer := oFile:getLine()
+            cTexto  += if(empty(cTexto),'',CRLF) + cBuffer
+        Enddo
+    Else
+        fwAlertError(oFile:error():message,'ERRO AO ABRIR ARQUIVO')
+        rpcClearEnv()
+        return .F.
+    EndIF
+
+    oFile:close()
+
+    aLinhas := strToKArr(cTexto,CHR(13) + CHR(10))
+    aDados  := {}
+    aEval(aLinhas,{|x| aadd(aDados,strToKArr(x,";"))})
+    aSort(aDados,2,,{|x,y| x[2] + x[1] < y[2] + y[1]})
+
+    rpcClearEnv()
+    
+Return 

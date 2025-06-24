@@ -1,0 +1,33 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_VARIAVEISTLPP
+    /*/
+Function U_VARIAVEISTLPP as variant
+
+    Local xVarTipoVariant := 99 as variant      //-- O CONTEUDO PODE MUDAR AO LONGO DO PROGRAMA
+    Local nVarTipoInteiro as integer            //-- INTEIROS
+    Local nVarTipoNumeric := 99.8 as numeric    //-- INTEIROS E PONTOS FLUTUANTES
+    Local nVarTipoDouble  as double             //-- PONTO FLUTUANTE
+    Local nVarTipoDecimal as decimal            //-- 1.52500
+    Local lVarTipoLogico  as logical            //-- PARA CONTEUDOS DO TIPO LOGICO   
+    Local cVarTipoTexto   as character          //-- CONTEUDOS DO TIPO TEXTO
+    Local dVarTipoData    as date               //-- DATA
+    Local bVarTipoBloco   as codeblock          //-- BLOCO DE CODIGO
+    Local oVarTipoObject  as object             //-- OBJETO
+    Local oVarTipoJson    as json               //-- JSON
+    Local aVarTipoArray   as array              //-- ARRAY
+
+    xVarTipoVariant     := nil
+    nVarTipoInteiro     := 2
+    nVarTipoNumeric     := 1
+    nVarTipoDouble      := 1.5
+    nVarTipoDecimal     := DEC_CREATE( 7233.759119, 21, 20 )
+    lVarTipoLogico      := .T.
+    cVarTipoTexto       := ''
+    dVarTipoData        := date()
+    bVarTipoBloco       := {|| alert('ok')}
+    oVarTipoJson        := fwJsonObject():new()
+    oVarTipoObject      := tFont():new()
+    aVarTipoArray       := array(0)
+
+Return 

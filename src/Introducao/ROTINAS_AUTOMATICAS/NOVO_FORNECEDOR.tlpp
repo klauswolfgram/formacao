@@ -1,0 +1,75 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_NOVO_FORNECEDOR
+    Programa para inclusao de novo fornecedor
+    @type  Function
+    @author Klaus Wolfgram
+    @since 12/07/2023
+    /*/
+Function U_NOVO_FORNECEDOR
+
+    Local oFornecedor as object
+    Local aDados      as array
+
+    IF .not. pergunte('ZNOVOCGC')
+        return
+    EndIF    
+
+    oFornecedor          := pessoa():new()     
+    oFornecedor:cpf_cnpj := MV_PAR01
+    oFornecedor:get_dados_cadastrais()
+
+    aDados               := array(0)
+
+    cCodigo              := getSxeNum('SA2','A2_COD')
+
+    While .T.
+
+        SA2->(dbSetOrder(1),dbSeek(xFilial(alias())+cCodigo))
+
+        IF Found()
+            confirmSX8()
+            cCodigo := getSxeNum('SA2','A2_COD')
+            Loop
+        EndIF
+
+        Exit    
+
+    End
+
+    cNome                := LEFT(oFornecedor:nome           ,tamSX3('A2_NOME'   )[1])
+    cNomeReduz           := LEFT(oFornecedor:nome_reduzido  ,tamSX3('A2_NREDUZ' )[1])
+    cEndereco            := LEFT(oFornecedor:endereco       ,tamSX3('A2_END'    )[1])
+    cBairro              := LEFT(oFornecedor:bairro         ,tamSX3('A2_BAIRRO' )[1])
+    cEstado              := LEFT(oFornecedor:uf             ,tamSX3('A2_EST'    )[1])
+    cCodMun              := LEFT(oFornecedor:cod_ibge       ,tamSX3('A2_COD_MUN')[1])
+    cCidade              := LEFT(oFornecedor:cidade         ,tamSX3('A2_MUN'    )[1])
+    cEmail               := LEFT(oFornecedor:email          ,tamSX3('A2_EMAIL'  )[1])
+    dDataNasc            := oFornecedor:data_nascimento
+    
+    aadd(aDados,{"A2_COD"   ,cCodigo        ,Nil})
+    aadd(aDados,{"A2_LOJA"  ,"01"           ,Nil})
+    aadd(aDados,{"A2_TIPO"  ,"J"            ,Nil})
+    aadd(aDados,{"A2_CGC"   ,MV_PAR01       ,Nil})
+    aadd(aDados,{"A2_NOME"  ,cNome          ,Nil})
+    aadd(aDados,{"A2_NREDUZ",cNomeReduz     ,Nil})    
+    aadd(aDados,{"A2_END"   ,cEndereco      ,Nil})
+    aadd(aDados,{"A2_EST"   ,cEstado        ,Nil})
+    aadd(aDados,{"A2_BAIRRO",cBairro        ,Nil})
+    aadd(aDados,{"A2_COD_MUN",cCodMun       ,Nil})
+    aadd(aDados,{"A2_MUN"   ,cCidade        ,Nil})
+    aadd(aDados,{"A2_EMAIL" ,cEmail         ,Nil})
+    aadd(aDados,{"A2_DTNASC",dDataNasc      ,Nil})
+
+    lMsErroAuto := .F.
+
+    msExecAuto({|x| mata020(x,3)},aDados)
+
+    IF lMsErroAuto
+        mostraErro()
+        return
+    EndIF    
+
+    confirmSX8() 
+
+Return 

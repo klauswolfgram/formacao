@@ -1,0 +1,66 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_VER_PEDIDO
+    Funcao para abertura do programa de pedidos da medicao
+    @type  Function
+    /*/
+Function U_VER_PEDIDO    
+
+    IF LEFT(Z53->Z53_TIPO,1) == 'S'
+        
+        IF fwAlertYesNo('MEDICAO SEM INTEGRACAO. NAO POSSUI PEDIDO. DESEJA REABRIR A MEDICAO','MEDICAO SEM INTEGRACAO')
+            Z53->(reclock(alias(),.F.), Z53_STATUS := 'A', Z53_PEDIDO := '',msunlock())
+        EndIF
+
+        return    
+        
+    EndIF
+
+    IF empty(Z53->Z53_PEDIDO)
+        return fwAlertInfo('MEDICAO NAO ENCERRADA. NAO POSSUI PEDIDO.','ATENCAO')
+    EndIF
+
+    IF LEFT(Z53->Z53_TIPO,1) == 'C'
+        
+        mata121() //-- tela de pedido de compras
+
+        cChaveSC7 := Z53->(Z53_FILIAL+Z53_PEDIDO)
+
+        SC7->(dbSetOrder(1),dbSeek(cChaveSC7))
+
+        IF SC7->(.not. Found())
+            Z53->(reclock(alias(),.F.), Z53_STATUS := 'A', Z53_PEDIDO := '',msunlock())
+        EndIF
+
+    ElseIF LEFT(Z53->Z53_TIPO,1) == 'V'
+
+        mata410() //-- tela de pedido de vendas
+
+        aAreaZ53  := Z53->(getArea())
+
+        cChaveSC5 := Z53->(Z53_FILIAL+Z53_PEDIDO)
+        cChaveZ53 := Z53->(Z53_FILIAL+Z53_NUMERO+Z53_NUMMED)
+
+        Z53->(dbSetOrder(1),dbSeek(cChaveZ53))
+
+        While .not. Z53->(eof()) .and. Z53->(Z53_FILIAL+Z53_NUMERO+Z53_NUMMED) == cChaveZ53
+            
+            IF Z53->(Z53_FILIAL+Z53_PEDIDO) == cChaveSC5
+
+                SC5->(dbSetOrder(1),dbSeek(cChaveSC5))
+
+                IF SC5->(.not. Found())
+                    Z53->(reclock(alias(),.F.), Z53_STATUS := 'A', Z53_PEDIDO := '',msunlock())
+                EndIF
+
+            EndIF
+
+            Z53->(dbSkip())
+
+        Enddo
+
+        restArea(aAreaZ53)
+
+    EndIF        
+
+Return 

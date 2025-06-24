@@ -1,0 +1,262 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_PROCESSA_ENCERRAMENTO_MEDICOES
+    Programa para encerramento das medicoes
+    @type  Function
+
+    @see https://tdninterno.totvs.com/display/tec/Try...Catch
+    @see (Pedido de Vendas) https://centraldeatendimento.totvs.com/hc/pt-br/articles/7326654842775-Cross-Segmento-TOTVS-Backoffice-Linha-Protheus-SIGAFAT-EXECAUTO-MATA410
+    @see (Pedido de Compras) https://tdn.totvs.com/pages/releaseview.action?pageId=6089279
+    /*/
+Function U_PROCESSA_ENCERRAMENTO_MEDICOES
+
+    Local lExec         := fwAlertYesNo('Confirma a execucao da rotina?','Processa encerramento de medicoes')
+
+    Private lAbortPrint := .F.
+
+    IF .not. lExec
+        return
+    EndIF  
+
+    processa({|| PROCESSA_ENCERRAMENTO_MEDICOES()},"Encerrando medições","Aguarde...")
+
+    (cAliasTmp)->(dbGoTop())
+
+    fwAlertInfo('Processo concluido','Encerramento de Medicoes')
+    
+Return 
+
+Static Function PROCESSA_ENCERRAMENTO_MEDICOES
+
+    Local nTamanho := 0
+
+    (cAliasTmp)->(dbEval({|| if(empty(MARK),nil,nTamanho++)}))
+
+    procregua(nTamanho)
+
+    (cAliasTmp)->(dbGoTop())
+
+    While .not. (cAliasTmp)->(eof())
+
+        IF lAbortPrint
+            Exit
+        EndIF
+
+        IF .not. empty((cAliasTmp)->MARK)
+            (cAliasTmp)->(ENCERRA_MEDICAO())
+        EndIF    
+
+        (cAliasTmp)->(dbSkip())
+
+    Enddo
+
+return
+
+Static Function ENCERRA_MEDICAO
+
+    incproc("PROCESSANDO MEDICAO+ITEM: " + (cAliasTmp)->(Z53_NUMMED + '-'+Z53_ITEM))
+
+    DO CASE 
+
+        CASE LEFT(Z53_TIPO,1) == "S" //-- Encerramento da medicao sem integracao
+            ENCERRA_SEM_INTEGRACAO()
+
+        CASE LEFT(Z53_TIPO,1) == "C" //-- Encerramento da medicao com inclusao de pedido de compras
+            ENCERRA_COM_PEDIDO_DE_COMPRAS()     
+
+        CASE LEFT(Z53_TIPO,1) == "V" //-- Encerramento da medicao com inclusao de pedido de vendas
+            ENCERRA_COM_PEDIDO_DE_VENDAS()
+
+    END CASE
+
+Return
+
+Static Function ENCERRA_SEM_INTEGRACAO 
+
+    IF Z53->(dbSetOrder(1),dbSeek(xFilial(alias())+(cAliasTmp)->(Z53_NUMERO+Z53_NUMMED+Z53_ITEM)))
+
+        Z53->(reclock(alias(),.F.))
+            Z53->Z53_STATUS := 'E'
+            Z53->Z53_PEDIDO := 'XXXXXX'
+        Z53->(msunlock())
+
+    EndIF
+
+    (cAliasTmp)->(reclock(alias(),.F.))
+        (cAliasTmp)->Z53_STATUS := 'E'
+        (cAliasTmp)->Z53_PEDIDO := 'XXXXXX'
+    (cAliasTmp)->(msunlock())
+
+return
+
+Static Function ENCERRA_COM_PEDIDO_DE_COMPRAS 
+
+    Local aCab      := {}
+    Local aItem     := {}
+    Local aItens    := {}
+    Local cNumPed   := ''
+
+    Private lMsErroAuto := .F.
+
+    Z53->(dbSetOrder(1),dbSeek(xFilial(alias())+(cAliasTmp)->(Z53_NUMERO+Z53_NUMMED+Z53_ITEM)))
+    Z51->(dbSetOrder(1),dbSeek(xFilial(alias())+Z53->Z53_NUMERO))
+    Z52->(dbSetOrder(1),dbSeek(xFilial(alias())+Z53->Z53_NUMERO))
+
+    While .not. Z52->(eof()) .and. Z52->(Z52_FILIAL+Z52_NUMERO) == Z53->(Z53_FILIAL+Z53_NUMERO)
+
+        IF Z52->Z52_CODPRD == Z53->Z53_CODPRD
+            Exit
+        EndIF
+
+        Z52->(dbSkip())
+
+    Enddo
+
+    cNumPed := getSxeNum('SC7','C7_NUM')
+
+    While SC7->(dbSetOrder(1),dbSeek(xFilial(alias())+cNumPed))
+        confirmSX8()
+        cNumPed := getSxeNum('SC7','C7_NUM')
+    End    
+
+    aadd(aCab,{'C7_NUM'     ,cNumPed        ,})
+    aadd(aCab,{'C7_EMISSAO' ,ddatabase      ,})
+    aadd(aCab,{'C7_FORNECE' ,Z51->Z51_CLIENT,})
+    aadd(aCab,{'C7_LOJA'    ,Z51->Z51_LOJA  ,})
+    aadd(aCab,{'C7_COND'    ,'001'          ,})
+    aadd(aCab,{'C7_CONTATO' ,'AUTO'         ,})
+    aadd(aCab,{'C7_FILENT'  ,cFilAnt        ,})
+
+    aadd(aItem,{'C7_PRODUTO',Z53->Z53_CODPRD,})
+    aadd(aItem,{'C7_QUANT'  ,Z53->Z53_QTD   ,})
+    aadd(aItem,{'C7_PRECO'  ,Z52->Z52_VLRUNI,})
+    aadd(aItem,{'C7_TOTAL'  ,Z53->Z53_VALOR ,})
+    aadd(aItem,{'C7_ZNUMMED',Z53->Z53_NUMMED,})
+    aadd(aItem,{'C7_ZITEMME',Z53->Z53_ITEM  ,})
+
+    aadd(aItens,aItem)
+
+    msExecAuto({|x,y| mata120(1,x,y,3)},aCab,aItens)
+
+    IF lMsErroAuto
+        rollbackSX8()
+        mostraErro()
+        return .F.
+    EndIF
+
+    confirmSX8()
+
+    Z53->(reclock(alias(),.F.))
+        Z53->Z53_STATUS := 'E'
+        Z53->Z53_PEDIDO := cNumPed
+    Z53->(msunlock())    
+
+    (cAliasTmp)->(reclock(alias(),.F.))
+        (cAliasTmp)->Z53_STATUS := 'E'
+        (cAliasTmp)->Z53_PEDIDO := cNumPed
+    (cAliasTmp)->(msunlock())    
+
+return
+
+Static Function ENCERRA_COM_PEDIDO_DE_VENDAS
+
+    Local aCab          := {}
+    Local aItem         := {}
+    Local aItens        := {}
+    Local nOpca         := 3
+    Local nRecSC5       := 0
+    Local cAliasSQL     := getNextAlias()
+
+    Private lMsErroAuto := .F.
+
+    Z53->(dbSetOrder(1),dbSeek(xFilial(alias())+(cAliasTmp)->(Z53_NUMERO+Z53_NUMMED+Z53_ITEM)))
+    Z51->(dbSetOrder(1),dbSeek(xFilial(alias())+Z53->Z53_NUMERO))
+    Z52->(dbSetOrder(1),dbSeek(xFilial(alias())+Z53->Z53_NUMERO))
+
+    While .not. Z52->(eof()) .and. Z52->(Z52_FILIAL+Z52_NUMERO) == Z53->(Z53_FILIAL+Z53_NUMERO)
+
+        IF Z52->Z52_CODPRD == Z53->Z53_CODPRD
+            Exit
+        EndIF
+
+        Z52->(dbSkip())
+
+    Enddo
+
+    BeginSQL alias cAliasSQL
+        SELECT * FROM %table:SC5% SC5
+        WHERE SC5.%notdel%
+        AND C5_FILIAL  = %exp:Z53->Z53_FILIAL%
+        AND C5_ZNUMMED = %exp:Z53->Z53_NUMMED%
+        AND C5_NOTA    = ''
+        AND C5_CLIENTE = %exp:Z51->Z51_CLIENT%
+        AND C5_LOJACLI = %exp:Z51->Z51_LOJA%
+    EndSQL
+
+    nRecSC5 := 0
+    (cAliasSQL)->(dbEval({|| nRecSC5 := R_E_C_N_O_}),dbCloseArea())
+
+    IF nRecSC5 > 0
+        
+        SC5->(dbSetOrder(1),dbGoTo(nRecSC5))
+        nOpca := 4
+
+        aadd(aCab,{"C5_NUM" ,SC5->C5_NUM,    })
+
+        SC6->(dbSetOrder(1),dbSeek(SC5->(C5_FILIAL+C5_NUM)))
+
+        While .not. SC6->(eof()) .and. SC6->(C6_FILIAL+C6_NUM) == SC5->(C5_FILIAL+C5_NUM)
+            
+            aItem := {}
+            aadd(aItem,{"C6_PRODUTO",SC6->C6_PRODUTO,})
+            aadd(aItem,{"C6_QTDVEN" ,SC6->C6_QTDVEN ,})
+            aadd(aItem,{"C6_PRCVEN" ,SC6->C6_PRCVEN ,})
+            aadd(aItem,{"C6_PRUNIT" ,SC6->C6_PRUNIT ,})
+            aadd(aItem,{"C6_VALOR"  ,SC6->C6_VALOR  ,})
+            aadd(aItem,{"C6_TES"    ,SC6->C6_TES    ,})
+            aadd(aItem,{"C6_ZITEMME",SC6->C6_ZITEMME,})
+            aadd(aItens,aItem)
+
+            SC6->(dbSkip())
+
+        Enddo
+
+    EndIF
+
+    aadd(aCab,{"C5_TIPO"    ,"N"            ,})
+    aadd(aCab,{"C5_EMISSAO" ,Z53->Z53_EMISSA,})
+    aadd(aCab,{"C5_CLIENTE" ,Z51->Z51_CLIENT,})
+    aadd(aCab,{"C5_LOJACLI" ,Z51->Z51_LOJA  ,})
+    aadd(aCab,{"C5_CONDPAG" ,"001"          ,})
+    aadd(aCab,{"C5_NATUREZ" ,"102"          ,})
+    aadd(aCab,{"C5_TPFRETE" ,"S"            ,})
+    aadd(aCab,{"C5_ZNUMMED" ,Z53->Z53_NUMMED,})
+
+    aItem := {}
+    aadd(aItem,{"C6_PRODUTO",Z53->Z53_CODPRD,})
+    aadd(aItem,{"C6_QTDVEN" ,Z53->Z53_QTD   ,})
+    aadd(aItem,{"C6_PRCVEN" ,Z52->Z52_VLRUNI,})
+    aadd(aItem,{"C6_PRUNIT" ,Z52->Z52_VLRUNI,})
+    aadd(aItem,{"C6_VALOR"  ,Z53->Z53_VALOR ,})
+    aadd(aItem,{"C6_TES"    ,'501'          ,})
+    aadd(aItem,{"C6_ZITEMME",Z53->Z53_ITEM  ,})
+    aadd(aItens,aItem)
+
+    msExecAuto({|x,y,z| mata410(x,y,z)},aCab,aItens,nOpca)
+
+    IF lMsErroAuto
+        mostraErro()
+        return .F.
+    EndIF    
+
+    Z53->(reclock(alias(),.F.))
+        Z53->Z53_STATUS := 'E'
+        Z53->Z53_PEDIDO := SC5->C5_NUM
+    Z53->(msunlock())    
+
+    (cAliasTmp)->(reclock(alias(),.F.))
+        (cAliasTmp)->Z53_STATUS := 'E'
+        (cAliasTmp)->Z53_PEDIDO := SC5->C5_NUM
+    (cAliasTmp)->(msunlock()) 
+
+return

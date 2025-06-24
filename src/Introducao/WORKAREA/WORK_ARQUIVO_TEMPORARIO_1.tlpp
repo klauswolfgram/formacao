@@ -1,0 +1,68 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_WORK_ARQUIVO_TEMPORARIO_1
+    Programa para exemplo sobre funcionamento de arquivos temporarios.
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/public/framework/Criatrab-+Retorna+arquivo+de+trabalho
+    @see https://tdn.totvs.com/display/tec/DBUseArea
+    @see https://tdn.totvs.com/display/tec/DBCreateIndex
+    @see https://tdn.totvs.com/display/tec/DBSetIndex
+    @see https://tdn.totvs.com/display/tec/File
+    @see https://tdn.totvs.com/display/tec/FErase
+    /*/
+Function U_WORK_ARQUIVO_TEMPORARIO_1
+
+    rpcSetEnv('99','01')
+
+    aCampos  := {{"ENTIDADE","C",3,0},{"CODIGO","C",6,0},{"LOJA","C",2,0},{"NOME","C",30,0}}
+    cArqTrab := criatrab(aCampos,.T.)
+    dbUseArea(.T.,,cArqTrab,cArqTrab,.T.,.F.)
+    dbCreateIndex(cArqTrab+'1',"CODIGO+LOJA+ENTIDADE",{|| CODIGO+LOJA+ENTIDADE})
+    dbSetIndex(cArqTrab+'1')
+
+    SA1->(dbSetOrder(1))
+
+    While .not. SA1->(eof())
+
+        reclock(cArqTrab,.T.)
+            CODIGO   := SA1->A1_COD
+            LOJA     := SA1->A1_LOJA
+            NOME     := SA1->A1_NOME
+            ENTIDADE := 'SA1'
+        msunlock()
+
+        SA1->(dbSkip())
+
+    Enddo
+
+    dbSelectArea('SA2')
+    dbSetOrder(1)
+
+    While .not. eof()
+
+        (cArqTrab)->(reclock(cArqTrab,.T.))
+            (cArqTrab)->CODIGO   := A2_COD
+            (cArqTrab)->LOJA     := A2_LOJA
+            (cArqTrab)->NOME     := A2_NOME
+            (cArqTrab)->ENTIDADE := alias()
+        (cArqTrab)->(msunlock())
+
+        dbSkip()
+
+    Enddo
+
+    (cArqTrab)->(dbCloseArea())
+
+    IF File('\system\' + cArqTrab + '.dtc')
+        FErase('\system\' + cArqTrab + '.dtc')
+    EndIF    
+
+    IF File('\system\' + cArqTrab + '1.cdx')
+        FErase('\system\' + cArqTrab + '1.cdx')
+    EndIF  
+
+    rpcClearEnv()
+
+Return 

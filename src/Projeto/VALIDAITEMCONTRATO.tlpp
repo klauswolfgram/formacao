@@ -1,0 +1,12 @@
+#include 'totvs.ch'
+
+Function U_VALIDAITEMCONTRATO
+
+    Local lItemValidado     := .T. as Logical
+    Local cCodigoProduto    := ''  as Character
+    Local cNumeroContrato   := ''  as Character
+
+    cCodigoProduto          := fwFldGet('Z53_CODPRD')
+    cNumeroContrato         := fwFldGet('Z53_NUMERO')
+
+return lItemValidado

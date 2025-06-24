@@ -1,0 +1,68 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_WORK_ARQUIVO_TEMPORARIO_3
+    Criacao de arquivos temporarios com uso de funcoes de banco de dados.
+    @type  Function
+    @author Klaus Wolfgram
+
+    @see https://tdn.totvs.com/display/tec/TCCanOpen
+    @see https://tdn.totvs.com/display/tec/TCDelFile
+    @see https://tdn.totvs.com/display/tec/DBCreate
+    @see https://tdn.totvs.com/display/tec/DBCreateIndex
+    @see https://tdn.totvs.com/display/tec/DBAppend
+    @see https://tdn.totvs.com/display/tec/DBCommit
+    @see https://tdn.totvs.com/display/tec/DBSetIndex
+    /*/
+Function U_WORK_ARQUIVO_TEMPORARIO_3
+
+    rpcSetEnv('99','01')
+
+    aCampos     := {{"ENTIDADE","C",3,0},{"CODIGO","C",6,0},{"LOJA","C",2,0},{"NOME","C",30,0},{"DTNASC","D",8,0}}
+    cAliasTab   := "TAB_ENTIDADES"
+
+    IF tcCanOpen(cAliasTab)
+        tcDelFile(cAliasTab)
+    EndIF
+
+    dbCreate(cAliasTab,aCampos,"TOPCONN")
+    dbUseArea(.T.,"TOPCONN",cAliasTab,cAliasTab,.T.,.F.)
+    dbCreateIndex(cAliasTab+'1',"CODIGO+LOJA+ENTIDADE",{|| CODIGO+LOJA+ENTIDADE})
+    dbSetIndex(cAliasTab+'1')     
+
+    SA1->(dbSetOrder(1))
+
+    While .not. SA1->(eof())
+
+        dbAppend()
+        ENTIDADE            := "SA1"
+        CODIGO              := SA1->A1_COD
+        LOJA                := SA1->A1_LOJA
+        NOME                := SA1->A1_NOME
+        DTNASC              := SA1->A1_DTNASC
+        dbCommit()
+
+        SA1->(dbSkip())
+
+    Enddo
+
+    SA2->(dbSetOrder(1))
+
+    While .not. SA2->(eof())
+
+        dbAppend()
+        ENTIDADE            := "SA2"
+        CODIGO              := SA2->A2_COD
+        LOJA                := SA2->A2_LOJA
+        NOME                := SA2->A2_NOME
+        DTNASC              := SA2->A2_DTNASC
+        dbCommit()
+
+        SA2->(dbSkip())
+
+    Enddo  
+
+    tcDelFile(cAliasTab)  
+
+    rpcClearEnv()
+    
+Return 

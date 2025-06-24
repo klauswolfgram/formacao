@@ -1,0 +1,73 @@
+#include 'totvs.ch'
+
+Function U_WORK_ORDENACAO_E_BUSCAS
+
+    Local cListaDeFornecedores   as character
+    Local nQuantidadeDeRegistros as numeric
+
+    rpcSetEnv('99','01')
+
+    dbSelectArea("SA2")
+    dbSetOrder(retOrder("SA2","A2_FILIAL+A2_COD"))
+    cChaveIndice := indexKey(retOrder("SA2","A2_FILIAL+A2_COD"))
+    cChaveBusca  := '  00000302'
+    dbSeek(cChaveBusca)
+    dbSeek(cChaveBusca,.T.)
+    dbSkip(1)
+    dbSkip(2)
+    dbSkip(-3)
+
+    dbGoTo(9)
+    dbGoTo(4)
+    dbGoTo(10)
+    dbGoTo(2)
+
+    //-- bof() --> Indica que o ponteiro da area de trabalho esta posicionado no inicio do arquivo
+    //-- eof() --> Indica que o ponteiro da area de trabalho esta posicionado no final do arquivo
+
+    SA2->(dbSetOrder(1),dbGoTop())
+
+    While .T.
+
+        nQuantidadeDeRegistros++
+        SA2->(dbSkip())
+
+        IF SA2->(eof())
+            Exit
+        EndIF    
+
+    Enddo
+
+    While .T.
+
+        cListaDeFornecedores += CRLF + SA2->(A2_COD + " - " + A2_NOME)
+        SA2->(dbSkip(-1))
+
+        IF SA2->(bof())
+            Exit
+        EndIF
+
+    Enddo
+
+    //-- reclock() --> Utilizado para reservar um registro para alteração ou para indicar que sera executada uma inclusao
+    //-- msunlock() --> Utilizado para destravar e confirmar a inclusao/alteracao de registro
+
+    SA2->(dbSetOrder(1),dbGoTop())
+
+    While .not. SA2->(eof())
+
+        SA2->(reclock("SA2",.F.))
+            SA2->A2_NREDUZ := LEFT(SA2->A2_NOME,AT(" ",SA2->A2_NOME))
+        SA2->(msunlock())    
+
+        SA2->(dbSkip())
+
+    Enddo
+
+    //-- dbCloseArea --> Indica que a area de trabalho deve ser encerrada
+    SA2->(dbCloseArea())
+    dbCloseArea()
+
+    rpcClearEnv()
+
+Return

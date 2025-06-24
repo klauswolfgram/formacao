@@ -1,0 +1,24 @@
+#include 'totvs.ch'
+
+// @see https://tdn.totvs.com/display/tec/DBSelectArea (DBSELECTAREA)
+// @see https://tdn.totvs.com/display/tec/Select (SELECT)
+// @see https://tdn.totvs.com/pages/releaseview.action?pageId=6814927 (rpcSetEnv)
+
+Function U_WORK_DBSELECTAREA
+
+    //-- Prepara o ambiente
+    rpcSetEnv('99','01','admin',' ','FAT','U_WORK_DBSELECTAREA')
+
+    //-- seleciona uma area para ser padrao a ser utilizada
+    dbSelectArea("SA1") 
+    dbSelectArea("SB1")
+
+    //-- Retorna o identificador de controle da area de trabalho
+    nAreaSA1 := select("SA1")
+
+    dbSelectArea(nAreaSA1)
+
+    //-- Encerra o ambiente
+    rpcClearEnv()
+
+return

@@ -1,0 +1,27 @@
+#include 'totvs.ch'
+
+/*/{Protheus.doc} U_WORK_QUERY_SQL_3
+    Exemplo de execucao de consultas SQL com embedded SQL
+    @type  Function
+    @see https://tdn.totvs.com/display/public/framework/Embedded+SQL
+    /*/
+Function U_WORK_QUERY_SQL_3
+
+    rpcSetEnv('99','01')
+
+    aDados := array(0)
+
+    BeginSQL Alias 'QRY'
+        COLUMN A1_DTNASC AS DATE
+        SELECT A1_COD, A1_LOJA, A1_NOME, A1_DTNASC, D_E_L_E_T_ DELETE_
+        FROM %table:SA1% SA1
+        WHERE A1_FILIAL = %xFilial:SA1%
+        AND A1_DTNASC <= %exp:date()%
+        ORDER BY %order:SA1,1%
+    EndSQL
+
+    QRY->(dbEval({|| aadd(aDados,{A1_COD,A1_NOME,A1_DTNASC,DELETE_})}))
+
+    rpcClearEnv()
+    
+Return 
