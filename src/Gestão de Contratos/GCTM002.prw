@@ -24,7 +24,6 @@
     @see https://tdn.totvs.com/display/framework/FormLoadField
     @see https://tdn.totvs.com/display/framework/AdvPl+utilizando+MVC    
 /*/
-
 Function U_GCTB002
 
     Private aRotina     := menudef()

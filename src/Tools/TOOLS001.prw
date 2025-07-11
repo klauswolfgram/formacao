@@ -10,16 +10,12 @@
 
 Function U_TOOLS001
 
-    rpcSetEnv('99','01')
-
     TOOLS001('Z50',.F.)
     TOOLS001('Z51',.F.)
 	TOOLS001('Z52',.F.)
 	TOOLS001('Z53',.F.)
 
     fwAlertInfo('Ok')
-
-    rpcClearEnv()
 
 Return
 
