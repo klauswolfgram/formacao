@@ -43,7 +43,7 @@ method grava_cliente() class cliente
     BeginSQL alias cAliasSQL
         SELECT * FROM %table:SA1% SA1
         WHERE SA1.%notdel%
-        AND substr(A1_CGC,1,8) = %exp:(substr(self:cpf_cnpj,1,8))%
+        AND substring(A1_CGC,1,8) = %exp:(substr(self:cpf_cnpj,1,8))%
         ORDER BY A1_COD,A1_LOJA
     EndSQL
 

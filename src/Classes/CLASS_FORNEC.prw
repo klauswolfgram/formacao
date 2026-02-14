@@ -45,7 +45,7 @@ method grava_fornecedor() class fornecedor
     BeginSQL alias cAliasSQL
         SELECT * FROM %table:SA2% SA2
         WHERE SA2.%notdel%
-        AND substr(A2_CGC,1,8) = %exp:(substr(self:cpf_cnpj,1,8))%
+        AND substring(A2_CGC,1,8) = %exp:(substr(self:cpf_cnpj,1,8))%
         ORDER BY A2_COD,A2_LOJA
     EndSQL
 
