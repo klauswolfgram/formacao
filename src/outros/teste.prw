@@ -16,9 +16,8 @@ Exemplo de funcao para processo de estagio.
 @see https://tdn.totvs.com/display/public/framework/dbSetOrder
 @see https://tdn.totvs.com/display/public/framework/dbSeek
 @see https://tdn.totvs.com/display/public/framework/empty
-@see https://tdn.totvs.com/pages/releaseview.action?pageId=24346996 (MSGINFO)
-@see https://tdn.totvs.com/pages/releaseview.action?pageId=24346992 (MSGALERT)
-@see https://tdn.totvs.com/pages/releaseview.action?pageId=24346998 (MSGSTOP)
+
+U_buscaCliALD()
 /*/
 User Function buscaCliALD()
 
@@ -74,15 +73,16 @@ User Function buscaCliALD()
 
         // usa empty() para verificar se o usuario digitou alguma coisa. Usa o ! para negacao. Nesse caso se o usuario nao deixou a variavel vazia - !empty(cCodigo) - passa para proxima funcao
         // funcao dbseek para verificar se o codigo digitado existe. Se nao existir, retorna .F.
+        // As mensagens serao mostradas em funcao fwAlert... que funcionam caso o programa seja executado direto do vscode.
         IF !empty(cCodigo) .Or. SA1->(dbSeek(xFilial("SA1")+cCodigo+cLoja))
-            msgInfo('Cliente encontrado: ' + SA1->A1_NOME) // Mostra o nome do cliente numa mensagem informativa
+            fwAlertInfo('Cliente encontrado: ' + SA1->A1_NOME,'SUCESSO') // Mostra o nome do cliente numa mensagem informativa
         Else
-            msgStop('Codigo invalido: ' + cCodigo) // mostra um alerta na mensagem de warning. O codigo pode ser vazio ou nao cadastrado.
+            fwAlertWarning('Codigo invalido: ' + cCodigo,'ATENCAO') // mostra um alerta na mensagem de warning. O codigo pode ser vazio ou nao cadastrado.
         EndIF
 
     // O bloco abaixo indica o que deve acontecer caso ocorra algum erro na execucao do programa
     RECOVER
-        msgStop(cError,"ERRO") // Mostra o erro gerado pelo errorBlock() registrado na variavel cError.
+        fwAlertError(cError,"ERRO") // Mostra o erro gerado pelo errorBlock() registrado na variavel cError.
 
     //-- Encerra o fluxo de controle    
     END SEQUENCE
